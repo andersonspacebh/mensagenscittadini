@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mensagens Cittadini</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calmo, prático, de balcão de atendimento — ferramenta de uso diário
+   IDEA: uma mesa de redação de correspondência: ficha à esquerda, carta pronta à direita
+   PICTURE: a própria mensagem montada, grande, editável, pronta para copiar
+   COLOUR and TYPE: turquesa Cittadini dominante, azul de apoio, coral para a ação; Outfit
+   LAYOUT: faixa turquesa, duas colunas (campos | mensagem), empilha no celular com barra fixa de copiar */
+:root{color-scheme:light dark;--bg:light-dark(#f3f8f8,#171c1c);--card:light-dark(#ffffff,#222929);--ink:light-dark(#3C3C3B,#edf3f3);--mut:light-dark(#66706f,#a6b2b2);--line:light-dark(#dbe5e5,#364040);--tq:#4BBBBD;--az:#477EC0;--co:#EA504C;--tint:light-dark(#e9f6f6,#1d3536)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Outfit,system-ui,sans-serif;overflow-x:clip}
+header{background:var(--tq);padding:22px max(5vw,16px) 24px}
+header h1{margin:0;font-size:clamp(28px,5vw,40px);line-height:1.05;font-weight:700;color:#0f2e2e;text-wrap:balance}
+header p{margin:6px 0 0;color:#174443;max-width:62ch}
+main{max-width:1240px;margin:0 auto;padding:20px max(4vw,14px) 120px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px;align-items:start}
+@media(max-width:860px){main{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+h2{font-size:18px;margin:0 0 10px;font-weight:600}
+.tipos{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:15px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--az);border-color:var(--az);color:#fff}
+.chip.novo{border-style:dashed;color:var(--az)}
+label{display:block;font-size:14px;font-weight:500;margin:14px 0 6px;color:var(--mut)}
+input,select,textarea{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);min-height:44px}
+textarea{resize:vertical}
+:focus-visible{outline:3px solid var(--az);outline-offset:2px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0 12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;min-height:44px;border:0;background:transparent;font:inherit;color:var(--ink);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--tq);color:#0f2e2e;font-weight:600}
+.check{display:flex;gap:10px;align-items:center;margin:14px 0 0;font-size:15px;color:var(--ink);font-weight:400}
+.check input{width:22px;height:22px;min-height:22px;flex:none;accent-color:var(--az)}
+.dica{font-size:13px;color:var(--mut);margin:6px 0 0}
+details{margin-top:16px;border-top:1px solid var(--line);padding-top:6px}
+summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:500;color:var(--az)}
+.hide{display:none!important}
+.prev{position:sticky;top:12px}
+.assunto{display:flex;gap:8px;align-items:center;background:var(--tint);border-radius:10px;padding:8px 8px 8px 12px;margin-bottom:10px;font-size:15px}
+.assunto span{flex:1;overflow-wrap:anywhere}
+#saida{min-height:380px;line-height:1.6;background:var(--tint);border-color:transparent;white-space:pre-wrap}
+.acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{min-height:44px;padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:500;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.btn.pri{background:var(--co);border-color:var(--co);color:#fff}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:14px}
+.aviso{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:light-dark(#fff3e6,#3a2c1c);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:14px}
+.barra{display:none}
+@media(max-width:860px){.prev{position:static}.barra{display:flex;gap:8px;position:fixed;left:0;right:0;bottom:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);z-index:5}.barra .btn{flex:1}}
+#toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);opacity:0;background:#0f2e2e;color:#fff;padding:10px 18px;border-radius:999px;transition:.2s;pointer-events:none;z-index:9}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media(prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Gerador de mensagens</h1>
+  <p>Escolha o tipo, preencha o nome e os detalhes — a mensagem sai pronta para copiar, mandar por e-mail ou WhatsApp.</p>
+</header>
+
+<main>
+<section class="panel">
+  <h2>Tipo de mensagem</h2>
+  <div class="tipos" id="tipos"></div>
+
+  <div id="editor" class="hide">
+    <label for="m-nome">Nome do modelo</label>
+    <input id="m-nome" placeholder="Ex.: Contrato enviado">
+    <label for="m-texto">Texto do modelo</label>
+    <textarea id="m-texto" rows="8" placeholder="{saudacao}, {nome}! Tudo bem?&#10;&#10;..."></textarea>
+    <p class="dica">Use {saudacao}, {nome}, {nome_completo} e {outros} — são trocados automaticamente. Os modelos ficam salvos neste aparelho/navegador.</p>
+    <div class="acoes"><button class="btn sm" id="m-salvar">Salvar modelo</button><button class="btn sm" id="m-excluir">Excluir</button></div>
+  </div>
+
+  <h2 style="margin-top:22px">Cliente</h2>
+  <label for="nome">Nome completo</label>
+  <input id="nome" value="Mariana Rossi" autocomplete="off">
+  <p class="dica">Preenchido como exemplo. A saudação usa só o primeiro nome.</p>
+  <div class="row">
+    <div><label>Sexo</label><div class="seg" id="sexo"><button data-v="f" aria-pressed="true">Feminino</button><button data-v="m" aria-pressed="false">Masculino</button></div></div>
+    <div><label for="saud">Saudação</label><select id="saud"><option value="auto">Automática (pelo horário)</option><option>Bom dia</option><option>Boa tarde</option><option>Boa noite</option><option>Olá</option></select></div>
+  </div>
+  <label for="outros">Outros requerentes (cônjuge, filhos…)</label>
+  <input id="outros" placeholder="Ex.: João, Maria Clara" autocomplete="off">
+  <label class="check"><input type="checkbox" id="self" checked> O próprio cliente também é requerente</label>
+  <div class="row">
+    <div><label for="abertura">Tom</label><select id="abertura"><option value="i">Próximo (Boa tarde, Mariana!)</option><option value="f">Formal (Prezada Mariana,)</option></select></div>
+    <div><label>Canal</label><div class="seg" id="canal"><button data-v="email" aria-pressed="true">E-mail</button><button data-v="wa" aria-pressed="false">WhatsApp</button></div></div>
+  </div>
+  <label class="check"><input type="checkbox" id="assin" checked> Assinar “Atenciosamente, Anderson Lima”</label>
+
+  <h2 style="margin-top:22px" id="h-det">Detalhes</h2>
+  <div data-c="docref"><label for="docref">Assinatura idêntica à do documento</label><select id="docref"><option value="à da carteira de identidade">Carteira de identidade</option><option value="à da CNH">CNH</option><option value="à do passaporte">Passaporte</option></select></div>
+  <div data-c="dataenvio"><label for="dataenvio">Formulário enviado em (opcional)</label><input type="date" id="dataenvio"></div>
+  <div data-c="tipoficha"><label for="tipoficha">Ficha de…</label><input id="tipoficha" value="atualização de estado civil" list="fichas"><datalist id="fichas"><option value="atualização de estado civil"><option value="atualização de endereço"><option value="declaração de vontade"><option value="acréscimo de filho menor"></datalist></div>
+  <div data-c="consulado"><label for="consulado">Consulado</label><select id="consulado"></select><input id="consOutro" class="hide" style="margin-top:8px" placeholder="Ex.: Consulado-Geral da Itália em Porto Alegre"></div>
+  <div data-c="data" class="row">
+    <div><label for="data">Data</label><input type="date" id="data"></div>
+    <div><label for="hora">Horário</label><input type="time" id="hora"></div>
+  </div>
+  <div data-c="endereco"><label for="endereco">Endereço do atendimento (opcional)</label><input id="endereco" placeholder="Rua, número – bairro"></div>
+  <div data-c="docs"><label for="docs">Documentos para levar (um por linha)</label><textarea id="docs" rows="6"></textarea><p class="dica">Lista padrão para você ajustar conforme o consulado — fica salva neste aparelho.</p></div>
+  <div data-c="sedex"><label for="sedex">Endereço para o Sedex</label><textarea id="sedex" rows="4"></textarea></div>
+  <div data-c="proximo"><label for="proximo">Próximo passo (opcional)</label><textarea id="proximo" rows="2" placeholder="Ex.: agendar a emissão do passaporte italiano"></textarea></div>
+
+  <details>
+    <summary>Contato para abrir direto (opcional)</summary>
+    <div class="row">
+      <div><label for="fone">WhatsApp (com DDD)</label><input id="fone" inputmode="tel" placeholder="31 99999-9999"></div>
+      <div><label for="email">E-mail</label><input id="email" type="email" placeholder="cliente@email.com"></div>
+    </div>
+  </details>
+</section>
+
+<section class="panel prev" aria-live="polite">
+  <h2>Mensagem pronta</h2>
+  <div class="aviso hide" id="editado"><span>Você editou o texto à mão.</span><button class="btn sm" id="refazer">Refazer com os campos</button></div>
+  <div class="assunto" id="boxAssunto"><span id="assunto"></span><button class="btn sm" id="copAssunto">Copiar assunto</button></div>
+  <textarea id="saida" rows="16" aria-label="Mensagem gerada"></textarea>
+  <div class="acoes">
+    <button class="btn pri" id="copiar">Copiar mensagem</button>
+    <a class="btn" id="wa" target="_blank" rel="noopener">Abrir no WhatsApp</a>
+    <a class="btn" id="mail">Abrir no e-mail</a>
+  </div>
+  <p class="dica">Se o botão de e-mail não abrir no seu aparelho, use “Copiar” e cole no app de e-mail.</p>
+</section>
+</main>
+
+<div class="barra"><button class="btn pri" id="copiar2">Copiar mensagem</button><a class="btn" id="wa2" target="_blank" rel="noopener">WhatsApp</a></div>
+<div id="toast" role="status"></div>
+
+<script>
+{
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const ls={get(k,d){try{const v=localStorage.getItem('cit-'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('cit-'+k,JSON.stringify(v))}catch(e){}}};
+
+const CONS=[
+ {n:'Consulado da Itália em Belo Horizonte',g:'m'},
+ {n:'Consulado-Geral da Itália em São Paulo',g:'m'},
+ {n:'Consulado-Geral da Itália em Curitiba',g:'m'},
+ {n:'Consulado-Geral da Itália no Rio de Janeiro',g:'m'},
+ {n:'Consulado da Itália em Recife',g:'m'},
+ {n:'Embaixada da Itália em Brasília',g:'f'},
+ {n:'Consulado-Geral da Itália em Londres',g:'m'}
+];
+const DOCS=`Documento de identidade com foto (RG ou CNH), original
+Passaporte italiano anterior, se houver
+Foto recente 3,5 x 4,5 cm, fundo branco
+Comprovante de residência atualizado
+Para menores de idade: presença dos pais com documento de identidade`;
+const SEDEX=`A/C Shirley de Oliveira Lima
+Caixa Postal 7557 – Av. Silviano Brandão, nº 1878
+Bairro Sagrada Família – CEP 31.015-970
+Belo Horizonte/MG`;
+
+const lista=a=>a.length<2?(a[0]||''):a.slice(0,-1).join(', ')+' e '+a.at(-1);
+const fmtData=v=>v?new Date(v+'T12:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'}):'';
+const fmtHora=v=>v?v.replace(':','h').replace(/h00$/,'h'):'';
+const FIM='Qualquer dúvida, estamos à disposição.';
+
+const T={
+ 'aire-envio':{rot:'AIRE · enviar formulário',canal:'email',campos:['docref'],
+  assunto:c=>`Formulário de inscrição no AIRE – ${c.completo}`,
+  corpo:c=>[
+   `Segue${c.pl?'m':''} em anexo ${c.ref('formulário de inscrição no AIRE','formulários de inscrição no AIRE')}. Por favor, siga estes passos:`,
+   `1. Confira com atenção todos os dados;\n2. Imprima ${c.pl?'cada formulário':'o formulário'};\n3. Assine à mão, com assinatura idêntica ${c.v.docref}${c.pl?' (cada requerente assina o próprio formulário)':''};\n4. Digitalize ou fotografe ${c.pl?'os formulários assinados':'o formulário assinado'}, de forma bem legível, e ${c.email?'responda a este mesmo e-mail com o arquivo em anexo':'nos envie por aqui'}.`,
+   'Se algum dado estiver incorreto, nos avise antes de assinar para fazermos a correção.',FIM]},
+ 'aire-lembrete':{rot:'AIRE · lembrete de assinatura',canal:'email',campos:['dataenvio'],
+  assunto:c=>`Lembrete: formulário do AIRE assinado – ${c.completo}`,
+  corpo:c=>[
+   `Passando para lembrar que ainda estamos aguardando ${c.ref('formulário de inscrição no AIRE','formulários de inscrição no AIRE')} assinado${c.pl?'s':''}${c.v.dataenvio?`, enviado${c.pl?'s':''} por e-mail em ${new Date(c.v.dataenvio+'T12:00').toLocaleDateString('pt-BR')}`:''}.`,
+   'Assim que recebermos, damos sequência ao protocolo junto ao Consulado.',
+   `Lembrando: a assinatura deve ser feita à mão, idêntica à do documento de identidade, e o arquivo pode ser enviado ${c.email?'em resposta ao e-mail original':'por aqui mesmo'}.`,
+   'Qualquer dúvida para imprimir ou assinar, estamos à disposição.']},
+ 'aire-ok':{rot:'AIRE · inscrição concluída',canal:'email',campos:['consulado','proximo'],
+  assunto:c=>`Inscrição no AIRE concluída – ${c.completo}`,
+  corpo:c=>{const k=c.cons;return [
+   `Temos uma ótima notícia: ${c.ref('inscrição no AIRE','inscrições no AIRE',true)} ${c.pl?'foram concluídas':'foi concluída'}${k?` junto ${k.g=='f'?'à':'ao'} ${k.n}`:''}.`,
+   ...(c.self?[c.pl?'Agora vocês estão oficialmente inscritos como cidadãos italianos residentes no exterior.':`Agora você está oficialmente inscrit${c.f?'a':'o'} como cidadã${c.f?'':'o'} italian${c.f?'a':'o'} residente no exterior.`]:[]),
+   c.v.proximo.trim()?`Próximo passo: ${c.v.proximo.trim()}`:'Em breve entraremos em contato com os próximos passos.',
+   'Parabéns, e conte sempre com a Cittadini!']}},
+ 'passaporte':{rot:'Passaporte · agendamento e documentos',canal:'wa',campos:['consulado','data','endereco','docs'],
+  assunto:c=>`Agendamento de passaporte italiano – ${c.completo}`,
+  corpo:c=>{const k=c.cons,d=c.v.docs.split('\n').map(s=>s.trim()).filter(Boolean);return [
+   `Confirmamos o agendamento para a emissão ${c.de('passaporte italiano','passaportes italianos')}${k?` ${k.g=='f'?'na':'no'} ${k.n}`:''}:`,
+   [c.v.data&&`Data: ${fmtData(c.v.data)}`,c.v.hora&&`Horário: ${fmtHora(c.v.hora)}`,c.v.endereco.trim()&&`Endereço: ${c.v.endereco.trim()}`].filter(Boolean).join('\n'),
+   'Recomendamos chegar com cerca de 15 minutos de antecedência.',
+   d.length?'Documentos para levar:\n'+d.map(s=>'• '+s).join('\n'):'',FIM]}},
+ 'ficha':{rot:'Ficha · assinar e enviar por Sedex',canal:'email',campos:['tipoficha','docref','sedex'],
+  assunto:c=>`Ficha de ${c.v.tipoficha} – ${c.completo}`,
+  corpo:c=>[
+   `Segue${c.pl?'m':''} em anexo ${c.ref('ficha de '+c.v.tipoficha,'fichas de '+c.v.tipoficha,true)}. Por favor:`,
+   `1. Confira com atenção todos os dados;\n2. Imprima ${c.pl?'as fichas':'a ficha'};\n3. Assine à mão, com assinatura idêntica ${c.v.docref};\n4. Envie ${c.pl?'as vias originais assinadas':'a via original assinada'} por Sedex para o endereço abaixo:`,
+   c.v.sedex.trim(),
+   'Ao postar, por favor nos envie o código de rastreio para acompanharmos a entrega.',FIM]}
+};
+
+let tipo=ls.get('tipo','aire-envio'), canal=T[tipo]?T[tipo].canal:'email', sexo='f', editado=false;
+let modelos=ls.get('modelos',[]);
+if(!T[tipo]&&!modelos.find(m=>m.id==tipo))tipo='aire-envio';
+
+$('#consulado').innerHTML=CONS.map((k,i)=>`<option value="${i}">${k.n}</option>`).join('')+'<option value="x">Outro…</option>';
+$('#docs').value=ls.get('docs',DOCS);
+$('#sedex').value=ls.get('sedex',SEDEX);
+
+function chips(){
+ const all=Object.entries(T).map(([id,t])=>({id,rot:t.rot})).concat(modelos.map(m=>({id:m.id,rot:m.nome})));
+ const esc=s=>s.replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+ $('#tipos').innerHTML=all.map(x=>`<button class="chip" data-id="${x.id}" aria-pressed="${x.id==tipo}">${esc(x.rot)}</button>`).join('')+`<button class="chip novo" data-id="novo" aria-pressed="${tipo=='novo'}">+ Meu modelo</button>`;
+}
+function seg(el,v){$$(el+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v==v))}
+
+function ctx(){
+ const v={};['docref','dataenvio','tipoficha','data','hora','endereco','docs','proximo','sedex'].forEach(k=>v[k]=$('#'+k).value);
+ const completo=$('#nome').value.trim().replace(/\s+/g,' ')||'Cliente';
+ const nome=completo.split(' ')[0];
+ const outros=$('#outros').value.split(/,|\se\s/).map(s=>s.trim()).filter(Boolean);
+ const self=$('#self').checked||!outros.length;
+ const nomes=(self?[nome]:[]).concat(outros), pl=nomes.length>1;
+ const grupo=self?`vocês (${lista(nomes)})`:lista(nomes);
+ const ci=$('#consulado').value;
+ const cons=ci=='x'?($('#consOutro').value.trim()?{n:$('#consOutro').value.trim(),g:/^embaixada/i.test($('#consOutro').value.trim())?'f':'m'}:null):CONS[ci];
+ return {v,completo,nome,outros,self,pl,f:sexo=='f',email:canal=='email',cons,
+  ref:(s,p,fem)=>{const a=fem?'a':'o';return !pl?(self?`${a} su${fem?'a':'o'} ${s}`:`${a} ${s} de ${nomes[0]}`):`${a}s ${p} de ${grupo}`},
+  de:(s,p)=>!pl?(self?`do seu ${s}`:`do ${s} de ${nomes[0]}`):`dos ${p} de ${grupo}`};
+}
+function saudacao(){const s=$('#saud').value;if(s!='auto')return s;const h=new Date().getHours();return h<12?'Bom dia':h<18?'Boa tarde':'Boa noite'}
+
+function gerar(){
+ const c=ctx(), s=saudacao();
+ const m=modelos.find(x=>x.id==tipo);
+ let corpo,assunto='';
+ if(m||tipo=='novo'){
+  const txt=m?m.texto:$('#m-texto').value;
+  corpo=txt.replace(/\{saudacao\}/g,s).replace(/\{nome\}/g,c.nome).replace(/\{nome_completo\}/g,c.completo).replace(/\{outros\}/g,lista(c.outros));
+  assunto=m?m.nome+' – '+c.completo:'';
+ }else{
+  const t=T[tipo];
+  const ab=$('#abertura').value=='f'?`${c.f?'Prezada':'Prezado'} ${c.nome},\n\n${s}!`:`${s}, ${c.nome}! Tudo bem?`;
+  corpo=[ab,...t.corpo(c)].filter(Boolean).join('\n\n');
+  assunto=t.assunto(c);
+ }
+ if($('#assin').checked)corpo=corpo.replace(/\s+$/,'')+'\n\nAtenciosamente,\nAnderson Lima';
+ return {corpo,assunto};
+}
+
+function links(texto,assunto){
+ let f=$('#fone').value.replace(/\D/g,'');if(f&&f.length<=11)f='55'+f;
+ const wa=`https://wa.me/${f}?text=${encodeURIComponent(texto)}`;
+ $('#wa').href=wa;$('#wa2').href=wa;
+ $('#mail').href=`mailto:${encodeURIComponent($('#email').value.trim())}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(texto)}`;
+}
+
+function render(force){
+ $$('[data-c]').forEach(el=>el.classList.toggle('hide',!(T[tipo]&&T[tipo].campos.includes(el.dataset.c))));
+ $('#h-det').classList.toggle('hide',!T[tipo]);
+ $('#consOutro').classList.toggle('hide',$('#consulado').value!='x');
+ const m=modelos.find(x=>x.id==tipo);
+ $('#editor').classList.toggle('hide',!(m||tipo=='novo'));
+ $('#m-excluir').classList.toggle('hide',!m);
+ const {corpo,assunto}=gerar();
+ $('#assunto').textContent=assunto?'Assunto: '+assunto:'';
+ $('#boxAssunto').classList.toggle('hide',!(assunto&&canal=='email'));
+ $('#mail').classList.toggle('hide',canal!='email');
+ if(!editado||force){$('#saida').value=corpo;editado=false}
+ $('#editado').classList.toggle('hide',!editado);
+ links($('#saida').value,assunto);
+}
+
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),1600)}
+async function copiar(t){try{await navigator.clipboard.writeText(t);toast('Copiado!')}catch(e){const s=$('#saida');s.focus();s.select();toast('Selecionado — use Copiar do teclado')}}
+
+$('#tipos').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;tipo=b.dataset.id;ls.set('tipo',tipo);
+ if(T[tipo]){canal=T[tipo].canal;seg('#canal',canal);$('#assin').checked=canal=='email'}
+ const m=modelos.find(x=>x.id==tipo);if(m){$('#m-nome').value=m.nome;$('#m-texto').value=m.texto}else if(tipo=='novo'){$('#m-nome').value='';$('#m-texto').value='{saudacao}, {nome}! Tudo bem?\n\n'}
+ editado=false;chips();render()});
+$('#sexo').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;sexo=b.dataset.v;seg('#sexo',sexo);render()});
+$('#canal').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;canal=b.dataset.v;seg('#canal',canal);$('#assin').checked=canal=='email';render()});
+document.querySelector('main section').addEventListener('input',e=>{if(e.target.id=='docs')ls.set('docs',e.target.value);if(e.target.id=='sedex')ls.set('sedex',e.target.value);render()});
+document.querySelector('main section').addEventListener('change',()=>render());
+$('#saida').addEventListener('input',()=>{editado=true;$('#editado').classList.remove('hide');links($('#saida').value,$('#assunto').textContent.replace('Assunto: ',''))});
+$('#refazer').addEventListener('click',()=>render(true));
+$('#copiar').addEventListener('click',()=>copiar($('#saida').value));
+$('#copiar2').addEventListener('click',()=>copiar($('#saida').value));
+$('#copAssunto').addEventListener('click',()=>copiar($('#assunto').textContent.replace('Assunto: ','')));
+$('#m-salvar').addEventListener('click',()=>{const nome=$('#m-nome').value.trim(),texto=$('#m-texto').value;if(!nome){toast('Dê um nome ao modelo');$('#m-nome').focus();return}
+ const m=modelos.find(x=>x.id==tipo);if(m){m.nome=nome;m.texto=texto}else{tipo='m'+Date.now();modelos.push({id:tipo,nome,texto})}
+ ls.set('modelos',modelos);ls.set('tipo',tipo);chips();render();toast('Modelo salvo')});
+$('#m-excluir').addEventListener('click',()=>{modelos=modelos.filter(x=>x.id!=tipo);ls.set('modelos',modelos);tipo='aire-envio';ls.set('tipo',tipo);chips();render();toast('Modelo excluído')});
+
+seg('#canal',canal);$('#assin').checked=canal=='email';
+const m0=modelos.find(x=>x.id==tipo);if(m0){$('#m-nome').value=m0.nome;$('#m-texto').value=m0.texto}
+chips();render();
+}
+</script>
+</body>
+</html>
